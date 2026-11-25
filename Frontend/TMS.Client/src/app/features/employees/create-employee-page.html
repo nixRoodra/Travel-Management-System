@@ -1,0 +1,161 @@
+<app-page-header
+  title="Create Employee"
+  subtitle="Provision a new employee user account, role, department, and reporting manager."
+  [breadcrumbs]="[
+    { label: 'Dashboard', route: '/dashboard' },
+    { label: 'Employees', route: '/admin/employees' },
+    { label: 'New Employee' }
+  ]"
+>
+  <a mat-button routerLink="/admin/employees">Back to Directory</a>
+</app-page-header>
+
+@if (isLoadingLookups()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Loading roles and managers" />
+}
+
+@if (errorMessage()) {
+  <div class="error-banner tms-card" role="alert">
+    <mat-icon aria-hidden="true">error_outline</mat-icon>
+    <span>{{ errorMessage() }}</span>
+  </div>
+}
+
+<section class="tms-card form-card">
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Full Name</mat-label>
+        <input matInput formControlName="fullName" placeholder="e.g. Jordan Taylor" />
+        @if (form.controls.fullName.hasError('required') && form.controls.fullName.touched) {
+          <mat-error>Full name is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Corporate Email</mat-label>
+        <input matInput type="email" formControlName="email" placeholder="jordan.taylor@company.com" />
+        @if (form.controls.email.hasError('required') && form.controls.email.touched) {
+          <mat-error>Email is required</mat-error>
+        } @else if (form.controls.email.hasError('email') && form.controls.email.touched) {
+          <mat-error>Enter a valid email address</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Employee Code</mat-label>
+        <input matInput formControlName="employeeCode" placeholder="e.g. EMP-105" />
+        @if (form.controls.employeeCode.hasError('required') && form.controls.employeeCode.touched) {
+          <mat-error>Employee code is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Initial Password</mat-label>
+        <input
+          matInput
+          [type]="hidePassword() ? 'password' : 'text'"
+          formControlName="password"
+          autocomplete="new-password"
+        />
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          (click)="togglePasswordVisibility()"
+          [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'"
+        >
+          <mat-icon>{{ hidePassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
+        </button>
+        @if (form.controls.password.hasError('required') && form.controls.password.touched) {
+          <mat-error>Password is required</mat-error>
+        } @else if (form.controls.password.hasError('minlength')) {
+          <mat-error>Password must be at least 8 characters</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Role</mat-label>
+        <mat-select formControlName="roleId">
+          @for (role of roles(); track role.id) {
+            <mat-option [value]="role.id">{{ role.name }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.roleId.hasError('required') && form.controls.roleId.touched) {
+          <mat-error>Select a valid role</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Designation</mat-label>
+        <input matInput formControlName="designation" placeholder="e.g. Senior Analyst" />
+        @if (form.controls.designation.hasError('required') && form.controls.designation.touched) {
+          <mat-error>Designation is required</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="department-field-group">
+        @if (!useManualDepartmentId() && knownDepartments().length > 0) {
+          <mat-form-field appearance="outline" class="dept-input">
+            <mat-label>Department</mat-label>
+            <mat-select formControlName="departmentId">
+              @for (dept of knownDepartments(); track dept.id) {
+                <mat-option [value]="dept.id">{{ dept.name }} (#{{ dept.id }})</mat-option>
+              }
+            </mat-select>
+            <mat-hint>Derived from existing employees (no /api/departments endpoint)</mat-hint>
+          </mat-form-field>
+        } @else {
+          <mat-form-field appearance="outline" class="dept-input">
+            <mat-label>Department ID</mat-label>
+            <input matInput type="number" min="1" formControlName="departmentId" />
+            <mat-hint>Enter numeric Department ID (no /api/departments endpoint)</mat-hint>
+            @if (form.controls.departmentId.hasError('required') || form.controls.departmentId.hasError('min')) {
+              <mat-error>Valid Department ID is required</mat-error>
+            }
+          </mat-form-field>
+        }
+
+        @if (knownDepartments().length > 0) {
+          <button
+            mat-button
+            type="button"
+            class="toggle-dept-btn"
+            (click)="toggleManualDepartment()"
+          >
+            {{ useManualDepartmentId() ? 'Choose from list' : 'Enter ID manually' }}
+          </button>
+        }
+      </div>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Employee Grade</mat-label>
+        <mat-select formControlName="gradeId">
+          @for (grade of gradeOptions; track grade.id) {
+            <mat-option [value]="grade.id">{{ grade.label }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>Seeded grades 1–6 (no /api/grades endpoint)</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-span">
+        <mat-label>Reporting Manager (Optional)</mat-label>
+        <mat-select formControlName="managerId">
+          <mat-option [value]="null">None</mat-option>
+          @for (mgr of managers(); track mgr.employeeId) {
+            <mat-option [value]="mgr.employeeId">
+              {{ mgr.fullName }} ({{ mgr.employeeCode }} — {{ mgr.departmentName }})
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="form-actions">
+      <a mat-button routerLink="/admin/employees">Cancel</a>
+      <button mat-flat-button color="primary" type="submit" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'Creating...' : 'Create Employee' }}
+      </button>
+    </div>
+  </form>
+</section>

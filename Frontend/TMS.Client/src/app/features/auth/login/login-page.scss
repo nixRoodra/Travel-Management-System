@@ -1,0 +1,78 @@
+.login-card {
+  padding: var(--tms-space-8) var(--tms-space-6);
+  background-color: var(--tms-bg-surface);
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--tms-space-3);
+  margin-bottom: var(--tms-space-6);
+}
+
+.brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--tms-radius-md);
+  background-color: var(--tms-brand-primary);
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.login-title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--tms-text-primary);
+}
+
+.login-subtitle {
+  margin: 2px 0 0;
+  font-size: 0.875rem;
+  color: var(--tms-text-secondary);
+}
+
+.error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tms-space-2);
+  padding: var(--tms-space-3);
+  margin-bottom: var(--tms-space-4);
+  border-radius: var(--tms-radius-md);
+  background-color: var(--tms-status-rejected-bg);
+  border: 1px solid var(--tms-status-rejected-border);
+  color: var(--tms-status-rejected-fg);
+  font-size: 0.875rem;
+  line-height: 1.4;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tms-space-3);
+}
+
+.submit-button {
+  height: 44px;
+  margin-top: var(--tms-space-2);
+  font-weight: 600;
+
+  .mdc-button__label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--tms-space-2);
+  }
+}

@@ -1,0 +1,155 @@
+<app-page-header
+  [title]="isEditMode() ? 'Edit Travel Request' : 'New Travel Request'"
+  subtitle="Complete trip details, travel mode, and estimated budget."
+  [breadcrumbs]="[
+    { label: 'Dashboard', route: '/dashboard' },
+    { label: 'Travel Requests', route: '/travel-requests' },
+    { label: isEditMode() ? 'Edit Draft' : 'New' }
+  ]"
+>
+  <a mat-button routerLink="/travel-requests">Back to list</a>
+</app-page-header>
+
+@if (isLoading()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Loading travel request" />
+}
+
+@if (nonDraftLocked()) {
+  <div class="alert-banner alert-banner--warning tms-card" role="status">
+    <mat-icon aria-hidden="true">lock</mat-icon>
+    <span>Only draft travel requests can be edited. This request is already in review or finalized.</span>
+  </div>
+}
+
+@if (errorMessage()) {
+  <div class="alert-banner alert-banner--error tms-card" role="alert">
+    <mat-icon aria-hidden="true">error_outline</mat-icon>
+    <span>{{ errorMessage() }}</span>
+  </div>
+}
+
+<section class="tms-card form-card">
+  <form [formGroup]="form" (ngSubmit)="saveDraft()" class="request-form" novalidate>
+    <div class="form-grid">
+      <mat-form-field appearance="outline" class="full-span">
+        <mat-label>Destination</mat-label>
+        <input matInput formControlName="destination" placeholder="e.g. London, UK" />
+        @if (form.controls.destination.hasError('required') && form.controls.destination.touched) {
+          <mat-error>Destination is required</mat-error>
+        } @else if (form.controls.destination.hasError('maxlength')) {
+          <mat-error>Destination cannot exceed 150 characters</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-span">
+        <mat-label>Business Purpose</mat-label>
+        <textarea
+          matInput
+          rows="3"
+          formControlName="purpose"
+          placeholder="Describe the business objective for this trip"
+        ></textarea>
+        @if (form.controls.purpose.hasError('required') && form.controls.purpose.touched) {
+          <mat-error>Business purpose is required</mat-error>
+        } @else if (form.controls.purpose.hasError('maxlength')) {
+          <mat-error>Purpose cannot exceed 500 characters</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="mode-group">
+        <span class="field-label">Travel Mode</span>
+        <mat-radio-group formControlName="travelMode" class="mode-radios" aria-label="Travel mode">
+          @for (option of modeOptions; track option.value) {
+            <mat-radio-button [value]="option.value">{{ option.label }}</mat-radio-button>
+          }
+        </mat-radio-group>
+      </div>
+
+      @if (form.controls.travelMode.value === TravelMode.Flight) {
+        <mat-form-field appearance="outline">
+          <mat-label>Flight Class</mat-label>
+          <mat-select formControlName="flightClass">
+            @for (option of flightClassOptions; track option.value) {
+              <mat-option [value]="option.value">{{ option.label }}</mat-option>
+            }
+          </mat-select>
+          @if (form.controls.flightClass.hasError('required') && form.controls.flightClass.touched) {
+            <mat-error>Select a flight class</mat-error>
+          }
+        </mat-form-field>
+      } @else {
+        <mat-form-field appearance="outline">
+          <mat-label>Train Class</mat-label>
+          <mat-select formControlName="trainClass">
+            @for (option of trainClassOptions; track option.value) {
+              <mat-option [value]="option.value">{{ option.label }}</mat-option>
+            }
+          </mat-select>
+          @if (form.controls.trainClass.hasError('required') && form.controls.trainClass.touched) {
+            <mat-error>Select a train class</mat-error>
+          }
+        </mat-form-field>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>Departure Date</mat-label>
+        <input matInput [matDatepicker]="departurePicker" formControlName="departureDate" />
+        <mat-datepicker-toggle matIconSuffix [for]="departurePicker" />
+        <mat-datepicker #departurePicker />
+        @if (form.controls.departureDate.hasError('required') && form.controls.departureDate.touched) {
+          <mat-error>Departure date is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Return Date</mat-label>
+        <input
+          matInput
+          [matDatepicker]="returnPicker"
+          formControlName="returnDate"
+          [min]="form.controls.departureDate.value"
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="returnPicker" />
+        <mat-datepicker #returnPicker />
+        @if (form.controls.returnDate.hasError('required') && form.controls.returnDate.touched) {
+          <mat-error>Return date is required</mat-error>
+        }
+      </mat-form-field>
+
+      @if (form.hasError('dateRangeInvalid') && (form.controls.returnDate.touched || form.controls.departureDate.touched)) {
+        <div class="full-span range-error" role="alert">
+          Departure date cannot be after return date.
+        </div>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>Estimated Cost (INR)</mat-label>
+        <span matTextPrefix>₹&nbsp;</span>
+        <input matInput type="number" step="0.01" min="0.01" formControlName="estimatedCost" />
+        @if (form.controls.estimatedCost.hasError('required') && form.controls.estimatedCost.touched) {
+          <mat-error>Estimated cost is required</mat-error>
+        } @else if (form.controls.estimatedCost.hasError('min')) {
+          <mat-error>Estimated cost must be greater than zero</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="form-actions">
+      <a mat-button routerLink="/travel-requests">Cancel</a>
+      @if (!nonDraftLocked()) {
+        <button mat-stroked-button type="submit" [disabled]="isSaving()">
+          {{ isSaving() ? 'Saving...' : isEditMode() ? 'Save Changes' : 'Save Draft' }}
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="isSaving()"
+          (click)="saveAndSubmit()"
+        >
+          {{ isSaving() ? 'Submitting...' : 'Save & Submit for Approval' }}
+        </button>
+      }
+    </div>
+  </form>
+</section>

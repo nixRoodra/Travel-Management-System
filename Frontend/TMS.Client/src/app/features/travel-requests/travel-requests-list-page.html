@@ -1,0 +1,165 @@
+<app-page-header
+  title="Travel Requests"
+  subtitle="Create draft requests, track approval status, and manage business travel."
+  [breadcrumbs]="[{ label: 'Dashboard', route: '/dashboard' }, { label: 'Travel Requests' }]"
+>
+  <a mat-flat-button color="primary" routerLink="/travel-requests/new">
+    <mat-icon>add</mat-icon>
+    New Travel Request
+  </a>
+</app-page-header>
+
+@if (isLoading()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Loading travel requests" />
+}
+
+@if (errorMessage()) {
+  <div class="error-panel tms-card" role="alert">
+    <div class="error-copy">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+    <button mat-stroked-button type="button" (click)="loadRequests()">Retry</button>
+  </div>
+}
+
+<section class="tms-card list-card">
+  <div class="toolbar-filters">
+    <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+      <mat-label>Search destination or purpose</mat-label>
+      <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+      <input
+        matInput
+        type="search"
+        [value]="searchTerm()"
+        (input)="onSearchChange($any($event.target).value)"
+        placeholder="e.g. London, Client workshop"
+      />
+    </mat-form-field>
+
+    <mat-chip-listbox
+      aria-label="Filter by status"
+      [value]="statusFilter()"
+      (change)="onFilterChange($event.value ?? 'ALL')"
+    >
+      @for (option of filterOptions; track option.value) {
+        <mat-chip-option [value]="option.value">{{ option.label }}</mat-chip-option>
+      }
+    </mat-chip-listbox>
+  </div>
+
+  @if (!isLoading() && filteredRequests().length === 0) {
+    <app-empty-state
+      icon="flight_takeoff"
+      title="No matching travel requests"
+      [message]="
+        requests().length === 0
+          ? 'You have not created any travel requests yet.'
+          : 'Try clearing your search or selecting a different status filter.'
+      "
+    >
+      @if (requests().length === 0) {
+        <a mat-flat-button color="primary" routerLink="/travel-requests/new">
+          Create First Request
+        </a>
+      }
+    </app-empty-state>
+  } @else if (filteredRequests().length > 0) {
+    <div class="table-scroll">
+      <table mat-table [dataSource]="pagedRequests()" class="tms-table">
+        <ng-container matColumnDef="destination">
+          <th mat-header-cell *matHeaderCellDef>Destination &amp; Purpose</th>
+          <td mat-cell *matCellDef="let req">
+            <a class="row-link" [routerLink]="['/travel-requests', req.id]">
+              {{ req.destination }}
+            </a>
+            <div class="cell-secondary">{{ req.purpose }}</div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="dates">
+          <th mat-header-cell *matHeaderCellDef>Travel Dates</th>
+          <td mat-cell *matCellDef="let req">
+            {{ req.departureDate | date: 'mediumDate' }} – {{ req.returnDate | date: 'mediumDate' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="mode">
+          <th mat-header-cell *matHeaderCellDef>Mode &amp; Class</th>
+          <td mat-cell *matCellDef="let req">
+            <div class="cell-primary">{{ formatMode(req.travelMode) }}</div>
+            <div class="cell-secondary">{{ formatTravelClass(req) }}</div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="estimatedCost">
+          <th mat-header-cell *matHeaderCellDef>Est. Cost</th>
+          <td mat-cell *matCellDef="let req">
+            {{ req.estimatedCost | currency: 'INR' : 'symbol' : '1.2-2' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let req">
+            <app-status-chip [status]="toStatus(req.status)" />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
+          <td mat-cell *matCellDef="let req" class="actions-cell">
+            <a
+              mat-icon-button
+              [routerLink]="['/travel-requests', req.id]"
+              matTooltip="View details"
+              aria-label="View travel request details"
+            >
+              <mat-icon>visibility</mat-icon>
+            </a>
+
+            @if (req.status === TravelRequestStatus.Draft) {
+              <a
+                mat-icon-button
+                [routerLink]="['/travel-requests', req.id, 'edit']"
+                matTooltip="Edit draft"
+                aria-label="Edit draft travel request"
+              >
+                <mat-icon>edit</mat-icon>
+              </a>
+              <button
+                mat-stroked-button
+                color="primary"
+                type="button"
+                [disabled]="submittingId() === req.id"
+                (click)="confirmSubmit(req)"
+              >
+                {{ submittingId() === req.id ? 'Submitting...' : 'Submit' }}
+              </button>
+            } @else if (req.status === TravelRequestStatus.Approved) {
+              <a
+                mat-stroked-button
+                routerLink="/my-trips"
+                [queryParams]="{ tripId: req.id }"
+              >
+                Expenses
+              </a>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="filteredRequests().length"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="[5, 10, 25]"
+      (page)="onPageChange($event)"
+      showFirstLastButtons
+    />
+  }
+</section>

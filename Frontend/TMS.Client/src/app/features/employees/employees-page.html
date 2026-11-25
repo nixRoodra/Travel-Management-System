@@ -1,0 +1,149 @@
+<app-page-header
+  title="Employees &amp; Organization"
+  subtitle="Manage corporate employee accounts, role assignments, and reporting structure."
+  [breadcrumbs]="[{ label: 'Dashboard', route: '/dashboard' }, { label: 'Employees' }]"
+>
+  <button mat-stroked-button type="button" [disabled]="isLoading()" (click)="loadDirectory()">
+    <mat-icon>refresh</mat-icon>
+    Refresh
+  </button>
+  <a mat-flat-button color="primary" routerLink="/admin/employees/new">
+    <mat-icon>person_add</mat-icon>
+    New Employee
+  </a>
+</app-page-header>
+
+@if (isLoading()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Loading employee directory" />
+}
+
+@if (errorMessage()) {
+  <div class="error-panel tms-card" role="alert">
+    <span>{{ errorMessage() }}</span>
+    <button mat-stroked-button type="button" (click)="loadDirectory()">Retry</button>
+  </div>
+}
+
+<section class="org-summary" aria-label="Organization overview">
+  <div class="summary-tile tms-card">
+    <span class="tile-label">Total Employees</span>
+    <strong class="tile-value">{{ employees().length }}</strong>
+    <span class="tile-hint">{{ managerCount() }} manager(s) active</span>
+  </div>
+
+  <div class="summary-tile tms-card">
+    <span class="tile-label">Known Departments</span>
+    <strong class="tile-value">{{ knownDepartments().length }}</strong>
+    <span class="tile-hint">
+      @if (knownDepartments().length > 0) {
+        @for (dept of knownDepartments(); track dept.id; let last = $last) {
+          {{ dept.name }}{{ last ? '' : ', ' }}
+        }
+      } @else {
+        Derived from employee records
+      }
+    </span>
+  </div>
+
+  <div class="summary-tile tms-card">
+    <span class="tile-label">Configured Roles &amp; Grades</span>
+    <strong class="tile-value">{{ roles().length }} roles · {{ seededGrades.length }} grades</strong>
+    <span class="tile-hint">Employee update/deactivation APIs not yet implemented</span>
+  </div>
+</section>
+
+<section class="tms-card directory-card">
+  <div class="toolbar-filters">
+    <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+      <mat-label>Search name, email, code, or department</mat-label>
+      <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+      <input
+        matInput
+        type="search"
+        [value]="searchTerm()"
+        (input)="onSearchChange($any($event.target).value)"
+      />
+    </mat-form-field>
+
+    <mat-chip-listbox
+      aria-label="Filter by role"
+      [value]="roleFilter()"
+      (change)="onRoleFilterChange($event.value ?? 'ALL')"
+    >
+      <mat-chip-option value="ALL">All Roles</mat-chip-option>
+      @for (role of roles(); track role.id) {
+        <mat-chip-option [value]="role.name">{{ role.name }}</mat-chip-option>
+      }
+    </mat-chip-listbox>
+  </div>
+
+  @if (!isLoading() && filteredEmployees().length === 0) {
+    <app-empty-state
+      icon="group"
+      title="No matching employees"
+      [message]="
+        employees().length === 0
+          ? 'Create the first employee account to begin using TMS.'
+          : 'Try clearing your search or selecting a different role filter.'
+      "
+    >
+      @if (employees().length === 0) {
+        <a mat-flat-button color="primary" routerLink="/admin/employees/new">Create Employee</a>
+      }
+    </app-empty-state>
+  } @else if (filteredEmployees().length > 0) {
+    <div class="table-scroll">
+      <table mat-table [dataSource]="pagedEmployees()" class="tms-table">
+        <ng-container matColumnDef="employee">
+          <th mat-header-cell *matHeaderCellDef>Employee</th>
+          <td mat-cell *matCellDef="let emp">
+            <div class="cell-primary">{{ emp.fullName }}</div>
+            <div class="cell-secondary">{{ emp.email }}</div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="employeeCode">
+          <th mat-header-cell *matHeaderCellDef>Code</th>
+          <td mat-cell *matCellDef="let emp" class="code-cell">{{ emp.employeeCode }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="role">
+          <th mat-header-cell *matHeaderCellDef>Role</th>
+          <td mat-cell *matCellDef="let emp">
+            <span class="role-pill">{{ emp.roleName }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="department">
+          <th mat-header-cell *matHeaderCellDef>Department &amp; Designation</th>
+          <td mat-cell *matCellDef="let emp">
+            <div class="cell-primary">{{ emp.departmentName }}</div>
+            <div class="cell-secondary">{{ emp.designation }}</div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="manager">
+          <th mat-header-cell *matHeaderCellDef>Reports To</th>
+          <td mat-cell *matCellDef="let emp">{{ getManagerName(emp.managerId) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>Account Created</th>
+          <td mat-cell *matCellDef="let emp">{{ emp.tmsAccountCreatedAt | date: 'mediumDate' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="filteredEmployees().length"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="[5, 10, 25]"
+      (page)="onPageChange($event)"
+      showFirstLastButtons
+    />
+  }
+</section>

@@ -1,0 +1,29 @@
+@use '@angular/material' as mat;
+
+// Angular Material M3 Corporate Theme
+// Uses restrained corporate blue/slate tones on a neutral light canvas.
+html {
+  color-scheme: light;
+
+  @include mat.theme((
+    color: (
+      theme-type: light,
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    density: 0,
+  ));
+
+  // Subtle surface and outline refinements for an enterprise data-first aesthetic
+  @include mat.theme-overrides((
+    surface: #ffffff,
+    surface-container-low: #f8fafc,
+    surface-container: #f1f5f9,
+    surface-container-high: #e2e8f0,
+    outline: #cbd5e1,
+    outline-variant: #e2e8f0,
+    corner-medium: 8px,
+    corner-large: 12px,
+  ));
+}

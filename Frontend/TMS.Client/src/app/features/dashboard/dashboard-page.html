@@ -1,0 +1,164 @@
+<app-page-header
+  title="Dashboard"
+  [subtitle]="'Signed in as ' + (user()?.fullName ?? 'User') + ' (' + (role() ?? '') + ')'"
+>
+  @if (isEmployeeWorkspace()) {
+    <a mat-flat-button color="primary" routerLink="/travel-requests">
+      <mat-icon>add</mat-icon>
+      New Travel Request
+    </a>
+  }
+</app-page-header>
+
+@if (isEmployeeWorkspace()) {
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Loading dashboard data" />
+  }
+
+  @if (errorMessage()) {
+    <div class="error-panel tms-card" role="alert">
+      <div class="error-copy">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+      <button mat-stroked-button type="button" (click)="loadDashboardData()">Retry</button>
+    </div>
+  }
+
+  <section class="summary-grid" aria-label="Travel and reimbursement summary">
+    <div class="summary-tile tms-card">
+      <span class="tile-label">Draft Requests</span>
+      <strong class="tile-value">{{ draftCount() }}</strong>
+      <span class="tile-hint">Ready to complete and submit</span>
+    </div>
+
+    <div class="summary-tile tms-card">
+      <span class="tile-label">Pending Approval</span>
+      <strong class="tile-value">{{ pendingApprovalCount() }}</strong>
+      <span class="tile-hint">Awaiting manager or finance review</span>
+    </div>
+
+    <div class="summary-tile tms-card">
+      <span class="tile-label">Approved &amp; Active Trips</span>
+      <strong class="tile-value">{{ approvedTripsCount() }}</strong>
+      <span class="tile-hint">Eligible for expense claims</span>
+    </div>
+
+    <div class="summary-tile tms-card">
+      <span class="tile-label">Pending Reimbursement</span>
+      <strong class="tile-value">{{ pendingReimbursementAmount() | currency: 'INR' : 'symbol' : '1.2-2' }}</strong>
+      <span class="tile-hint">Approved claims awaiting payout</span>
+    </div>
+  </section>
+
+  <section class="dashboard-panels">
+    <div class="panel tms-card">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Recent Travel Requests</h2>
+          <p class="panel-subtitle">Your latest business travel submissions</p>
+        </div>
+        <a mat-button routerLink="/travel-requests">View all</a>
+      </div>
+
+      @if (!isLoading() && recentRequests().length === 0) {
+        <app-empty-state
+          icon="flight_takeoff"
+          title="No travel requests yet"
+          message="Create a draft travel request to start an approval workflow."
+        >
+          <a mat-flat-button color="primary" routerLink="/travel-requests">Create Travel Request</a>
+        </app-empty-state>
+      } @else if (recentRequests().length > 0) {
+        <div class="table-scroll">
+          <table mat-table [dataSource]="recentRequests()" class="tms-table">
+            <ng-container matColumnDef="destination">
+              <th mat-header-cell *matHeaderCellDef>Destination</th>
+              <td mat-cell *matCellDef="let req">
+                <div class="cell-primary">{{ req.destination }}</div>
+                <div class="cell-secondary">{{ req.purpose }}</div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="dates">
+              <th mat-header-cell *matHeaderCellDef>Dates</th>
+              <td mat-cell *matCellDef="let req">
+                {{ req.departureDate | date: 'mediumDate' }} – {{ req.returnDate | date: 'mediumDate' }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="mode">
+              <th mat-header-cell *matHeaderCellDef>Mode</th>
+              <td mat-cell *matCellDef="let req">{{ formatMode(req.travelMode) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="estimatedCost">
+              <th mat-header-cell *matHeaderCellDef>Est. Cost</th>
+              <td mat-cell *matCellDef="let req">
+                {{ req.estimatedCost | currency: 'INR' : 'symbol' : '1.2-2' }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let req">
+                <app-status-chip [status]="toTravelStatus(req.status)" />
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="requestColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: requestColumns"></tr>
+          </table>
+        </div>
+      }
+    </div>
+
+    <div class="panel tms-card">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Recent Reimbursements</h2>
+          <p class="panel-subtitle">Payment status for approved expense claims</p>
+        </div>
+        <a mat-button routerLink="/reimbursements">View all</a>
+      </div>
+
+      @if (!isLoading() && recentReimbursements().length === 0) {
+        <app-empty-state
+          icon="account_balance_wallet"
+          title="No reimbursements yet"
+          message="Reimbursements appear here once finance approves your expense claims."
+        />
+      } @else if (recentReimbursements().length > 0) {
+        <ul class="reimbursement-list">
+          @for (item of recentReimbursements(); track item.reimbursementId) {
+            <li class="reimbursement-row">
+              <div>
+                <div class="cell-primary">{{ item.destination }}</div>
+                <div class="cell-secondary">{{ item.purpose }}</div>
+              </div>
+              <div class="reimbursement-meta">
+                <span class="amount">{{ item.amount | currency: 'INR' : 'symbol' : '1.2-2' }}</span>
+                <app-status-chip [status]="toReimbursementStatus(item.status)" />
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </section>
+} @else {
+  <section class="panel tms-card role-overview">
+    <h2 class="panel-title">{{ role() }} Workspace</h2>
+    <p class="panel-subtitle">Use the navigation links below to access your operational queues.</p>
+    <div class="quick-links">
+      @if (role() === 'Finance') {
+        <a mat-stroked-button routerLink="/finance/approvals">Travel Approvals</a>
+        <a mat-stroked-button routerLink="/finance/expense-reviews">Expense Reviews</a>
+        <a mat-stroked-button routerLink="/finance/reimbursements">Reimbursements</a>
+      }
+      @if (role() === 'Admin') {
+        <a mat-stroked-button routerLink="/admin/employees">Manage Employees</a>
+      }
+    </div>
+  </section>
+}

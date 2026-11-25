@@ -1,0 +1,60 @@
+.error-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--tms-space-4);
+  margin-bottom: var(--tms-space-4);
+  background-color: var(--tms-status-rejected-bg);
+  border-color: var(--tms-status-rejected-border);
+  color: var(--tms-status-rejected-fg);
+}
+
+.queue-card {
+  overflow: hidden;
+}
+
+.filter-bar {
+  padding: var(--tms-space-4) var(--tms-space-5);
+  border-bottom: 1px solid var(--tms-border-subtle);
+}
+
+.search-field {
+  width: 100%;
+  max-width: 420px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.tms-table {
+  width: 100%;
+}
+
+.claim-id-cell {
+  font-weight: 600;
+}
+
+.cell-primary {
+  font-weight: 500;
+  color: var(--tms-text-primary);
+}
+
+.cell-secondary {
+  font-size: 0.75rem;
+  color: var(--tms-text-muted);
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.amount-cell {
+  font-weight: 600;
+}
+
+.actions-header,
+.actions-cell {
+  text-align: right;
+  white-space: nowrap;
+}

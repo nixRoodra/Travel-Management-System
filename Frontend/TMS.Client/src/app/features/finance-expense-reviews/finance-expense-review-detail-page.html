@@ -1,0 +1,189 @@
+<app-page-header
+  [title]="claim() ? 'Expense Claim #' + claim()!.expenseClaimId : 'Expense Claim Review'"
+  [subtitle]="claim() ? claim()!.employeeName + ' — ' + claim()!.destination : ''"
+  [breadcrumbs]="[
+    { label: 'Dashboard', route: '/dashboard' },
+    { label: 'Expense Reviews', route: '/finance/expense-reviews' },
+    { label: claim() ? '#' + claim()!.expenseClaimId : 'Review' }
+  ]"
+>
+  <a mat-button routerLink="/finance/expense-reviews">Back to Queue</a>
+
+  @if (canReview()) {
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="isSubmittingDecision()"
+      (click)="openResubmissionDialog()"
+    >
+      Request Resubmission
+    </button>
+    <button
+      mat-stroked-button
+      color="warn"
+      type="button"
+      [disabled]="isSubmittingDecision()"
+      (click)="openRejectDialog()"
+    >
+      Reject
+    </button>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      [disabled]="isSubmittingDecision()"
+      (click)="openApproveDialog()"
+    >
+      Approve Claim
+    </button>
+  }
+</app-page-header>
+
+@if (isLoading()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Loading expense claim details" />
+}
+
+@if (errorMessage()) {
+  <div class="error-panel tms-card" role="alert">
+    <span>{{ errorMessage() }}</span>
+    <button mat-stroked-button type="button" (click)="loadClaimData()">Retry</button>
+  </div>
+}
+
+@if (claim(); as detail) {
+  <div class="review-layout">
+    <div class="main-column">
+      <section class="tms-card summary-card">
+        <div class="summary-top">
+          <div>
+            <span class="kicker">{{ detail.employeeName }} ({{ detail.employeeCode }})</span>
+            <h2 class="trip-heading">{{ detail.destination }}</h2>
+            <p class="trip-purpose">{{ detail.purpose }}</p>
+          </div>
+          <app-status-chip [status]="toClaimStatus(detail.status)" />
+        </div>
+
+        <mat-divider />
+
+        <dl class="meta-grid">
+          <div>
+            <dt>Travel Dates</dt>
+            <dd>{{ detail.departureDate | date: 'mediumDate' }} – {{ detail.returnDate | date: 'mediumDate' }}</dd>
+          </div>
+          <div>
+            <dt>Submitted At</dt>
+            <dd>{{ detail.submittedAtUtc | date: 'medium' }}</dd>
+          </div>
+          <div>
+            <dt>Total Claimed Amount</dt>
+            <dd class="total-amount">
+              {{ detail.totalClaimedAmount | currency: 'INR' : 'symbol' : '1.2-2' }}
+            </dd>
+          </div>
+          <div>
+            <dt>Line Items</dt>
+            <dd>{{ detail.expenseItems.length }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="tms-card items-card">
+        <h3 class="section-title">Expense Items &amp; Receipts</h3>
+
+        @if (detail.expenseItems.length === 0) {
+          <app-empty-state
+            icon="receipt_long"
+            title="No expense items"
+            message="This expense claim has no line items."
+          />
+        } @else {
+          <div class="table-scroll">
+            <table mat-table [dataSource]="detail.expenseItems" class="tms-table">
+              <ng-container matColumnDef="expenseDate">
+                <th mat-header-cell *matHeaderCellDef>Date</th>
+                <td mat-cell *matCellDef="let item">{{ item.expenseDate | date: 'mediumDate' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="description">
+                <th mat-header-cell *matHeaderCellDef>Description</th>
+                <td mat-cell *matCellDef="let item">{{ item.description }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="amount">
+                <th mat-header-cell *matHeaderCellDef>Amount</th>
+                <td mat-cell *matCellDef="let item" class="amount-cell">
+                  {{ item.amount | currency: 'INR' : 'symbol' : '1.2-2' }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="receipts">
+                <th mat-header-cell *matHeaderCellDef>Receipts</th>
+                <td mat-cell *matCellDef="let item">
+                  @if (item.receipts.length === 0) {
+                    <span class="no-receipts">None attached</span>
+                  } @else {
+                    <div class="receipt-list">
+                      @for (receipt of item.receipts; track receipt.receiptId) {
+                        <div class="receipt-chip">
+                          <span class="receipt-name" [matTooltip]="receipt.fileName">{{ receipt.fileName }}</span>
+                          <div class="receipt-actions">
+                            <button
+                              mat-icon-button
+                              type="button"
+                              class="receipt-icon-btn"
+                              (click)="viewReceipt(item, receipt)"
+                              [matTooltip]="'View ' + receipt.fileName"
+                              aria-label="View receipt"
+                            >
+                              <mat-icon>visibility</mat-icon>
+                            </button>
+                            <button
+                              mat-icon-button
+                              type="button"
+                              class="receipt-icon-btn"
+                              (click)="downloadReceipt(item, receipt)"
+                              [matTooltip]="'Download ' + receipt.fileName"
+                              aria-label="Download receipt"
+                            >
+                              <mat-icon>download</mat-icon>
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="itemColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: itemColumns"></tr>
+            </table>
+          </div>
+        }
+      </section>
+    </div>
+
+    <aside class="tms-card history-card">
+      <h3 class="section-title">Review History</h3>
+
+      @if (reviewHistory().length === 0) {
+        <p class="empty-history">No finance review actions recorded yet.</p>
+      } @else {
+        <ul class="history-list">
+          @for (entry of reviewHistory(); track entry.reviewId) {
+            <li class="history-entry">
+              <div class="history-top">
+                <app-status-chip [status]="toReviewDecisionStatus(entry.decision)" />
+                <span class="history-date">{{ entry.reviewedAtUtc | date: 'medium' }}</span>
+              </div>
+              <div class="history-reviewer">{{ entry.financeEmployeeName }}</div>
+              @if (entry.comments) {
+                <p class="history-comments">{{ entry.comments }}</p>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </aside>
+  </div>
+}

@@ -1,0 +1,54 @@
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--tms-space-2);
+  padding: var(--tms-space-3) var(--tms-space-4);
+  margin-bottom: var(--tms-space-4);
+  background-color: var(--tms-status-rejected-bg);
+  border-color: var(--tms-status-rejected-border);
+  color: var(--tms-status-rejected-fg);
+  font-size: 0.875rem;
+}
+
+.form-card {
+  padding: var(--tms-space-6);
+  max-width: 860px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--tms-space-4);
+
+  @media (max-width: 699.98px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.full-span {
+  grid-column: 1 / -1;
+}
+
+.department-field-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.dept-input {
+  width: 100%;
+}
+
+.toggle-dept-btn {
+  margin-top: -8px;
+  font-size: 0.75rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--tms-space-3);
+  margin-top: var(--tms-space-6);
+  padding-top: var(--tms-space-4);
+  border-top: 1px solid var(--tms-border-subtle);
+}

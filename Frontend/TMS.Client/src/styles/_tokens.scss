@@ -1,0 +1,47 @@
+// Corporate Design Tokens for TMS Portal
+
+:root {
+  // Layout dimensions
+  --tms-sidebar-width: 256px;
+  --tms-toolbar-height: 64px;
+  --tms-content-max-width: 1400px;
+
+  // Neutral surface palette
+  --tms-bg-canvas: #f8fafc;
+  --tms-bg-surface: #ffffff;
+  --tms-bg-subtle: #f1f5f9;
+  --tms-bg-hover: #f1f5f9;
+
+  // Borders & dividers
+  --tms-border-subtle: #e2e8f0;
+  --tms-border-strong: #cbd5e1;
+
+  // Typography hierarchy
+  --tms-text-primary: #0f172a;
+  --tms-text-secondary: #475569;
+  --tms-text-muted: #64748b;
+
+  // Brand / accent
+  --tms-brand-primary: #1d4ed8;
+  --tms-brand-primary-soft: #eff6ff;
+  --tms-brand-primary-border: #bfdbfe;
+
+  // Elevation (subtle enterprise shadows)
+  --tms-shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --tms-shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.04);
+
+  // Spacing scale
+  --tms-space-1: 4px;
+  --tms-space-2: 8px;
+  --tms-space-3: 12px;
+  --tms-space-4: 16px;
+  --tms-space-5: 20px;
+  --tms-space-6: 24px;
+  --tms-space-8: 32px;
+
+  // Radii
+  --tms-radius-sm: 6px;
+  --tms-radius-md: 8px;
+  --tms-radius-lg: 12px;
+  --tms-radius-pill: 9999px;
+}

@@ -1,0 +1,41 @@
+@use './styles/theme';
+@use './styles/tokens';
+@use './styles/status-tokens';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background-color: var(--tms-bg-canvas);
+  color: var(--tms-text-primary);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--tms-brand-primary);
+  outline-offset: 2px;
+}
+
+.tms-card {
+  background-color: var(--tms-bg-surface);
+  border: 1px solid var(--tms-border-subtle);
+  border-radius: var(--tms-radius-lg);
+  box-shadow: var(--tms-shadow-xs);
+}
+
+.tms-snackbar-success .mdc-snackbar__surface {
+  background-color: #166534;
+  color: #ffffff;
+}
+
+.tms-snackbar-error .mdc-snackbar__surface {
+  background-color: #991b1b;
+  color: #ffffff;
+}

@@ -1,0 +1,101 @@
+<app-page-header
+  [title]="request()?.destination ?? 'Travel Request Details'"
+  [subtitle]="request()?.purpose ?? 'Review request details and approval status.'"
+  [breadcrumbs]="[
+    { label: 'Dashboard', route: '/dashboard' },
+    { label: 'Travel Requests', route: '/travel-requests' },
+    { label: request() ? '#' + request()!.id : 'Details' }
+  ]"
+>
+  <a mat-button routerLink="/travel-requests">Back to list</a>
+  @if (request(); as req) {
+    @if (req.status === TravelRequestStatus.Draft) {
+      <a mat-stroked-button [routerLink]="['/travel-requests', req.id, 'edit']">
+        <mat-icon>edit</mat-icon>
+        Edit Draft
+      </a>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="isSubmitting()"
+        (click)="confirmSubmit()"
+      >
+        {{ isSubmitting() ? 'Submitting...' : 'Submit for Approval' }}
+      </button>
+    } @else if (req.status === TravelRequestStatus.Approved) {
+      <a
+        mat-flat-button
+        color="primary"
+        routerLink="/my-trips"
+        [queryParams]="{ tripId: req.id }"
+      >
+        Open in My Trips
+      </a>
+    }
+  }
+</app-page-header>
+
+@if (isLoading()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Loading travel request details" />
+}
+
+@if (errorMessage()) {
+  <div class="error-panel tms-card" role="alert">
+    <span>{{ errorMessage() }}</span>
+    <button mat-stroked-button type="button" (click)="loadDetail()">Retry</button>
+  </div>
+}
+
+@if (request(); as req) {
+  <section class="tms-card detail-card">
+    <div class="detail-top">
+      <div>
+        <span class="meta-label">Request #{{ req.id }}</span>
+        <h2 class="detail-destination">{{ req.destination }}</h2>
+      </div>
+      <app-status-chip [status]="toStatus(req.status)" />
+    </div>
+
+    <mat-divider />
+
+    <dl class="detail-grid">
+      <div class="detail-item">
+        <dt>Business Purpose</dt>
+        <dd>{{ req.purpose }}</dd>
+      </div>
+      <div class="detail-item">
+        <dt>Travel Mode &amp; Class</dt>
+        <dd>{{ formatMode(req.travelMode) }} — {{ travelClassLabel() }}</dd>
+      </div>
+      <div class="detail-item">
+        <dt>Departure Date</dt>
+        <dd>{{ req.departureDate | date: 'fullDate' }}</dd>
+      </div>
+      <div class="detail-item">
+        <dt>Return Date</dt>
+        <dd>{{ req.returnDate | date: 'fullDate' }}</dd>
+      </div>
+      <div class="detail-item">
+        <dt>Estimated Cost</dt>
+        <dd class="cost-value">{{ req.estimatedCost | currency: 'INR' : 'symbol' : '1.2-2' }}</dd>
+      </div>
+      <div class="detail-item">
+        <dt>Created At</dt>
+        <dd>{{ req.createdAtUtc | date: 'medium' }}</dd>
+      </div>
+      <div class="detail-item">
+        <dt>Submitted At</dt>
+        <dd>{{ req.submittedAtUtc ? (req.submittedAtUtc | date: 'medium') : 'Not yet submitted' }}</dd>
+      </div>
+    </dl>
+
+    <div class="info-note">
+      <mat-icon aria-hidden="true">info</mat-icon>
+      <span>
+        Policy violation checks run automatically upon submission. Detailed violation and approver
+        comment breakdowns are not yet exposed on this API endpoint.
+      </span>
+    </div>
+  </section>
+}

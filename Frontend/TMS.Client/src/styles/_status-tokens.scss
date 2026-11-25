@@ -1,0 +1,101 @@
+// Semantic Status Color System
+// Every status pairs a distinct surface tint, border, high-contrast foreground,
+// and must always render with readable label text (never color alone).
+
+:root {
+  // Neutral / Draft
+  --tms-status-draft-bg: #f1f5f9;
+  --tms-status-draft-fg: #334155;
+  --tms-status-draft-border: #cbd5e1;
+
+  // Info / Submitted
+  --tms-status-submitted-bg: #eff6ff;
+  --tms-status-submitted-fg: #1d4ed8;
+  --tms-status-submitted-border: #bfdbfe;
+
+  // Warning / Pending states (Manager Approval, Finance Approval, Payment)
+  --tms-status-pending-bg: #fef3c7;
+  --tms-status-pending-fg: #92400e;
+  --tms-status-pending-border: #fde68a;
+
+  // Attention / Resubmission Requested
+  --tms-status-resubmission-bg: #ffedd5;
+  --tms-status-resubmission-fg: #9a3412;
+  --tms-status-resubmission-border: #fed7aa;
+
+  // Success / Approved, Paid, Completed
+  --tms-status-success-bg: #dcfce7;
+  --tms-status-success-fg: #166534;
+  --tms-status-success-border: #bbf7d0;
+
+  // Completed (subtle cool-emerald distinction from Approved while staying positive)
+  --tms-status-completed-bg: #e0f2fe;
+  --tms-status-completed-fg: #075985;
+  --tms-status-completed-border: #bae6fd;
+
+  // Danger / Rejected
+  --tms-status-rejected-bg: #fee2e2;
+  --tms-status-rejected-fg: #991b1b;
+  --tms-status-rejected-border: #fecaca;
+}
+
+.tms-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: var(--tms-radius-pill);
+  border: 1px solid transparent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+
+  &--draft,
+  &--cancelled {
+    background-color: var(--tms-status-draft-bg);
+    color: var(--tms-status-draft-fg);
+    border-color: var(--tms-status-draft-border);
+  }
+
+  &--submitted {
+    background-color: var(--tms-status-submitted-bg);
+    color: var(--tms-status-submitted-fg);
+    border-color: var(--tms-status-submitted-border);
+  }
+
+  &--pending,
+  &--pending-manager,
+  &--pending-finance,
+  &--pending-payment {
+    background-color: var(--tms-status-pending-bg);
+    color: var(--tms-status-pending-fg);
+    border-color: var(--tms-status-pending-border);
+  }
+
+  &--resubmission-requested {
+    background-color: var(--tms-status-resubmission-bg);
+    color: var(--tms-status-resubmission-fg);
+    border-color: var(--tms-status-resubmission-border);
+  }
+
+  &--approved,
+  &--paid {
+    background-color: var(--tms-status-success-bg);
+    color: var(--tms-status-success-fg);
+    border-color: var(--tms-status-success-border);
+  }
+
+  &--completed {
+    background-color: var(--tms-status-completed-bg);
+    color: var(--tms-status-completed-fg);
+    border-color: var(--tms-status-completed-border);
+  }
+
+  &--rejected {
+    background-color: var(--tms-status-rejected-bg);
+    color: var(--tms-status-rejected-fg);
+    border-color: var(--tms-status-rejected-border);
+  }
+}

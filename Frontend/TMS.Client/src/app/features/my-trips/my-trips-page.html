@@ -1,0 +1,163 @@
+<app-page-header
+  title="My Trips"
+  subtitle="Integrated workspace for approved travel, itinerary context, expense claims, and reimbursements."
+  [breadcrumbs]="[{ label: 'Dashboard', route: '/dashboard' }, { label: 'My Trips' }]"
+>
+  <a mat-stroked-button routerLink="/travel-requests">All Travel Requests</a>
+</app-page-header>
+
+@if (isLoading()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Loading trips" />
+}
+
+@if (errorMessage()) {
+  <div class="error-panel tms-card" role="alert">
+    <span>{{ errorMessage() }}</span>
+    <button mat-stroked-button type="button" (click)="loadTrips()">Retry</button>
+  </div>
+} @else if (!isLoading() && trips().length === 0) {
+  <app-empty-state
+    icon="luggage"
+    title="No approved trips yet"
+    message="Approved travel requests appear here so you can manage your trip expenses and track reimbursements."
+  >
+    <a mat-flat-button color="primary" routerLink="/travel-requests">View Travel Requests</a>
+  </app-empty-state>
+} @else if (trips().length > 0) {
+  <div class="trips-layout">
+    <aside class="trips-sidebar tms-card" aria-label="Approved trips">
+      <div class="sidebar-header">
+        <h2 class="sidebar-title">Approved Trips ({{ trips().length }})</h2>
+      </div>
+      <div class="trip-list">
+        @for (trip of trips(); track trip.id) {
+          <button
+            type="button"
+            class="trip-item"
+            [class.trip-item--active]="selectedTripId() === trip.id"
+            (click)="selectTrip(trip)"
+          >
+            <div class="trip-item-top">
+              <span class="trip-destination">{{ trip.destination }}</span>
+              <app-status-chip [status]="toTravelStatus(trip.status)" />
+            </div>
+            <div class="trip-purpose">{{ trip.purpose }}</div>
+            <div class="trip-dates">
+              {{ trip.departureDate | date: 'mediumDate' }} – {{ trip.returnDate | date: 'mediumDate' }}
+            </div>
+          </button>
+        }
+      </div>
+    </aside>
+
+    @if (selectedTrip(); as trip) {
+      <section class="trip-workspace tms-card">
+        <div class="workspace-header">
+          <div>
+            <span class="trip-kicker">Trip #{{ trip.id }}</span>
+            <h2 class="workspace-title">{{ trip.destination }}</h2>
+            <p class="workspace-purpose">{{ trip.purpose }}</p>
+          </div>
+          <app-status-chip [status]="toTravelStatus(trip.status)" />
+        </div>
+
+        <mat-tab-group animationDuration="150ms">
+          <mat-tab label="Trip &amp; Itinerary">
+            <div class="tab-body">
+              <h3 class="subsection-title">Travel Request Information</h3>
+              <dl class="trip-details-grid">
+                <div>
+                  <dt>Departure</dt>
+                  <dd>{{ trip.departureDate | date: 'fullDate' }}</dd>
+                </div>
+                <div>
+                  <dt>Return</dt>
+                  <dd>{{ trip.returnDate | date: 'fullDate' }}</dd>
+                </div>
+                <div>
+                  <dt>Travel Mode &amp; Class</dt>
+                  <dd>{{ formatMode(trip.travelMode) }} — {{ formatClass(trip) }}</dd>
+                </div>
+                <div>
+                  <dt>Estimated Budget</dt>
+                  <dd>{{ trip.estimatedCost | currency: 'INR' : 'symbol' : '1.2-2' }}</dd>
+                </div>
+              </dl>
+
+              <mat-divider />
+
+              <div class="itinerary-section">
+                <h3 class="subsection-title">Itinerary</h3>
+                <div class="gap-notice" role="status">
+                  <mat-icon aria-hidden="true">info</mat-icon>
+                  <div>
+                    <strong>Itinerary segments not yet available from backend</strong>
+                    <p>
+                      The backend API currently provides trip dates, destination, and travel
+                      mode/class only. Detailed flight, rail, or hotel itinerary endpoints are not
+                      implemented yet.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <mat-tab label="Expense Claim">
+            <div class="tab-body">
+              <app-expense-claim-panel
+                [travelRequestId]="trip.id"
+                [tripStatus]="trip.status"
+                [departureDate]="trip.departureDate"
+                [returnDate]="trip.returnDate"
+                (claimChanged)="activeClaim.set($event)"
+              />
+            </div>
+          </mat-tab>
+
+          <mat-tab label="Reimbursement">
+            <div class="tab-body">
+              @if (selectedReimbursement(); as reimb) {
+                <div class="reimbursement-summary">
+                  <div class="reimb-top">
+                    <div>
+                      <span class="trip-kicker">Reimbursement #{{ reimb.reimbursementId }}</span>
+                      <h3 class="reimb-amount">
+                        {{ reimb.amount | currency: 'INR' : 'symbol' : '1.2-2' }}
+                      </h3>
+                    </div>
+                    <app-status-chip [status]="toReimbursementStatus(reimb.status)" />
+                  </div>
+                  <dl class="trip-details-grid">
+                    <div>
+                      <dt>Expense Claim ID</dt>
+                      <dd>#{{ reimb.expenseClaimId }}</dd>
+                    </div>
+                    <div>
+                      <dt>Created At</dt>
+                      <dd>{{ reimb.createdAtUtc | date: 'medium' }}</dd>
+                    </div>
+                    <div>
+                      <dt>Paid At</dt>
+                      <dd>{{ reimb.paidAtUtc ? (reimb.paidAtUtc | date: 'medium') : 'Pending payment' }}</dd>
+                    </div>
+                    <div>
+                      <dt>Payment Reference</dt>
+                      <dd>{{ reimb.paymentReference || '—' }}</dd>
+                    </div>
+                  </dl>
+                </div>
+              } @else {
+                <app-empty-state
+                  icon="account_balance_wallet"
+                  title="No reimbursement generated yet"
+                  message="Reimbursement records are created automatically once finance approves your submitted expense claim."
+                />
+              }
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </section>
+    }
+  </div>
+}

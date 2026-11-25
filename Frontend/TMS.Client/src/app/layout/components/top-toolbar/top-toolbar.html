@@ -1,0 +1,46 @@
+<mat-toolbar class="top-toolbar">
+  <div class="toolbar-left">
+    @if (isHandset()) {
+      <button
+        mat-icon-button
+        type="button"
+        aria-label="Toggle navigation menu"
+        (click)="menuToggle.emit()"
+      >
+        <mat-icon>menu</mat-icon>
+      </button>
+      <span class="mobile-brand">TMS Portal</span>
+    }
+  </div>
+
+  <div class="toolbar-right">
+    <span class="role-badge">{{ userRole() }}</span>
+
+    <button
+      mat-button
+      type="button"
+      class="profile-trigger"
+      [matMenuTriggerFor]="profileMenu"
+      aria-label="Open user profile menu"
+    >
+      <span class="avatar" aria-hidden="true">{{ initials() }}</span>
+      <span class="user-name">{{ userName() }}</span>
+      <mat-icon class="chevron" aria-hidden="true">expand_more</mat-icon>
+    </button>
+
+    <mat-menu #profileMenu="matMenu" xPosition="before">
+      <div class="menu-user-summary" (click)="$event.stopPropagation()">
+        <div class="menu-user-name">{{ userName() }}</div>
+        @if (userEmail()) {
+          <div class="menu-user-email">{{ userEmail() }}</div>
+        }
+        <div class="menu-user-role">Role: {{ userRole() }}</div>
+      </div>
+      <mat-divider />
+      <button mat-menu-item type="button" (click)="logout.emit()">
+        <mat-icon>logout</mat-icon>
+        <span>Sign out</span>
+      </button>
+    </mat-menu>
+  </div>
+</mat-toolbar>

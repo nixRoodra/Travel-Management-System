@@ -1,0 +1,109 @@
+.top-toolbar {
+  height: var(--tms-toolbar-height);
+  background-color: var(--tms-bg-surface);
+  border-bottom: 1px solid var(--tms-border-subtle);
+  color: var(--tms-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--tms-space-4);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--tms-space-2);
+}
+
+.mobile-brand {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--tms-text-primary);
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--tms-space-3);
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: var(--tms-radius-pill);
+  background-color: var(--tms-bg-subtle);
+  border: 1px solid var(--tms-border-subtle);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--tms-text-secondary);
+}
+
+.profile-trigger {
+  height: 40px;
+  padding: 0 var(--tms-space-2);
+  border-radius: var(--tms-radius-md);
+
+  .mdc-button__label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tms-space-2);
+  }
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--tms-radius-pill);
+  background-color: var(--tms-brand-primary-soft);
+  color: var(--tms-brand-primary);
+  border: 1px solid var(--tms-brand-primary-border);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--tms-text-primary);
+
+  @media (max-width: 599.98px) {
+    display: none;
+  }
+}
+
+.chevron {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--tms-text-muted);
+}
+
+.menu-user-summary {
+  padding: var(--tms-space-3) var(--tms-space-4);
+  min-width: 200px;
+}
+
+.menu-user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--tms-text-primary);
+}
+
+.menu-user-email {
+  font-size: 0.75rem;
+  color: var(--tms-text-secondary);
+  margin-top: 2px;
+}
+
+.menu-user-role {
+  font-size: 0.75rem;
+  color: var(--tms-text-muted);
+  margin-top: 4px;
+}

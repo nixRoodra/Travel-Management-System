@@ -1,0 +1,67 @@
+# ==============================================================================
+# .NET / C# / Visual Studio
+# ==============================================================================
+**/[Bb]in/
+**/[Oo]bj/
+**/out/
+**/.vs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.sln.docstates
+
+# Build & test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.visualstudio.diagnostics*
+
+# App uploads / local storage
+**/App_Data/ExpenseReceipts/*
+!**/App_Data/ExpenseReceipts/.gitkeep
+
+# User-specific & local secret overrides
+appsettings.*.local.json
+
+# ==============================================================================
+# Angular / Node.js / Frontend
+# ==============================================================================
+**/node_modules/
+**/dist/
+**/tmp/
+**/out-tsc/
+**/.angular/cache/
+**/.angular/
+coverage/
+*.lcov
+.sass-cache/
+
+# Package manager logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==============================================================================
+# IDEs and Editors
+# ==============================================================================
+.idea/
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
+
+# ==============================================================================
+# OS Generated Files
+# ==============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini

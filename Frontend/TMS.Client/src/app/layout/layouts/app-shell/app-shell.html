@@ -1,0 +1,33 @@
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<mat-sidenav-container class="app-shell-container">
+  <mat-sidenav
+    class="app-sidenav"
+    [mode]="isHandset() ? 'over' : 'side'"
+    [opened]="!isHandset()"
+    [fixedInViewport]="isHandset()"
+  >
+    <app-sidebar
+      [sections]="navSections"
+      [currentRole]="userRole()"
+      (itemSelected)="onNavItemSelected()"
+    />
+  </mat-sidenav>
+
+  <mat-sidenav-content class="app-sidenav-content">
+    <app-top-toolbar
+      [isHandset]="isHandset()"
+      [userName]="userName()"
+      [userEmail]="userEmail()"
+      [userRole]="userRole()"
+      (menuToggle)="onMenuToggle()"
+      (logout)="onLogout()"
+    />
+
+    <main class="main-content" id="main-content" tabindex="-1">
+      <div class="content-inner">
+        <router-outlet />
+      </div>
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

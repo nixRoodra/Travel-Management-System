@@ -1,0 +1,154 @@
+<app-page-header
+  title="Finance Reimbursements"
+  subtitle="Process pending reimbursement payouts and inspect reimbursement details."
+  [breadcrumbs]="[{ label: 'Dashboard', route: '/dashboard' }, { label: 'Reimbursements' }]"
+>
+  <button mat-stroked-button type="button" [disabled]="isLoading()" (click)="loadPending()">
+    <mat-icon>refresh</mat-icon>
+    Refresh
+  </button>
+</app-page-header>
+
+@if (isLoading()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Loading pending reimbursements" />
+}
+
+@if (errorMessage()) {
+  <div class="error-panel tms-card" role="alert">
+    <span>{{ errorMessage() }}</span>
+    <button mat-stroked-button type="button" (click)="loadPending()">Retry</button>
+  </div>
+}
+
+<section class="summary-strip" aria-label="Pending payout summary">
+  <div class="summary-tile tms-card">
+    <span class="tile-label">Pending Payouts</span>
+    <strong class="tile-value">{{ pending().length }}</strong>
+  </div>
+  <div class="summary-tile tms-card">
+    <span class="tile-label">Total Pending Amount</span>
+    <strong class="tile-value">{{ totalPendingAmount() | currency: 'INR' : 'symbol' : '1.2-2' }}</strong>
+  </div>
+  <div class="summary-tile tms-card lookup-tile">
+    <span class="tile-label">Inspect Reimbursement by ID</span>
+    <div class="lookup-row">
+      <mat-form-field appearance="outline" class="lookup-field" subscriptSizing="dynamic">
+        <mat-label>ID</mat-label>
+        <input
+          matInput
+          type="number"
+          min="1"
+          [value]="lookupId()"
+          (input)="lookupId.set($any($event.target).value)"
+          (keyup.enter)="lookupById()"
+        />
+      </mat-form-field>
+      <button mat-stroked-button type="button" (click)="lookupById()">Open</button>
+    </div>
+  </div>
+</section>
+
+<section class="tms-card queue-card">
+  <div class="filter-bar">
+    <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+      <mat-label>Search employee, destination, or purpose</mat-label>
+      <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+      <input
+        matInput
+        type="search"
+        [value]="searchTerm()"
+        (input)="onSearchChange($any($event.target).value)"
+      />
+    </mat-form-field>
+  </div>
+
+  @if (!isLoading() && filteredPending().length === 0) {
+    <app-empty-state
+      icon="payments"
+      title="No pending reimbursements"
+      message="All approved expense claim payouts have been processed."
+    />
+  } @else if (filteredPending().length > 0) {
+    <div class="table-scroll">
+      <table mat-table [dataSource]="pagedPending()" class="tms-table">
+        <ng-container matColumnDef="reimbursementId">
+          <th mat-header-cell *matHeaderCellDef>ID</th>
+          <td mat-cell *matCellDef="let item">
+            <a class="row-link" [routerLink]="['/finance/reimbursements', item.reimbursementId]">
+              #{{ item.reimbursementId }}
+            </a>
+            <div class="cell-secondary">Claim #{{ item.expenseClaimId }}</div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="employee">
+          <th mat-header-cell *matHeaderCellDef>Employee</th>
+          <td mat-cell *matCellDef="let item">
+            <div class="cell-primary">{{ item.employeeName }}</div>
+            <div class="cell-secondary">{{ item.employeeCode }}</div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="trip">
+          <th mat-header-cell *matHeaderCellDef>Trip</th>
+          <td mat-cell *matCellDef="let item">
+            <div class="cell-primary">{{ item.destination }}</div>
+            <div class="cell-secondary">{{ item.purpose }}</div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="amount">
+          <th mat-header-cell *matHeaderCellDef>Amount</th>
+          <td mat-cell *matCellDef="let item" class="amount-cell">
+            {{ item.amount | currency: 'INR' : 'symbol' : '1.2-2' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let item">
+            <app-status-chip [status]="toStatus(item.status)" />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="createdAtUtc">
+          <th mat-header-cell *matHeaderCellDef>Queued At</th>
+          <td mat-cell *matCellDef="let item">{{ item.createdAtUtc | date: 'mediumDate' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
+          <td mat-cell *matCellDef="let item" class="actions-cell">
+            <a
+              mat-button
+              [routerLink]="['/finance/reimbursements', item.reimbursementId]"
+            >
+              Details
+            </a>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="payingId() === item.reimbursementId"
+              (click)="openRecordPaymentDialog(item)"
+            >
+              {{ payingId() === item.reimbursementId ? 'Saving...' : 'Record Payment' }}
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="filteredPending().length"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="[5, 10, 25]"
+      (page)="onPageChange($event)"
+      showFirstLastButtons
+    />
+  }
+</section>
