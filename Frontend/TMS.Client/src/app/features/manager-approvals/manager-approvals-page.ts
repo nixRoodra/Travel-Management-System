@@ -9,6 +9,7 @@ import { ApprovalDecisionDialog } from '../../shared/components/approval-decisio
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { TravelApprovalsQueue } from '../../shared/components/travel-approvals-queue/travel-approvals-queue';
 import { TravelApprovalItemDto } from '../../shared/models/travel-approval.model';
+import { formatInr } from '../../shared/utilities/currency.util';
 import { extractApiErrorMessage } from '../../shared/utilities/http-error.util';
 import { ManagerApprovalsService } from './manager-approvals.service';
 
@@ -84,7 +85,7 @@ export class ManagerApprovalsPage implements OnInit {
       width: '440px',
       data: {
         title: 'Approve Travel Request',
-        subtitle: `${item.employeeName} (${item.employeeCode}) — ${item.travelRequest.destination} ($${item.travelRequest.estimatedCost.toFixed(2)})`,
+        subtitle: `${item.employeeName} (${item.employeeCode}) — ${item.travelRequest.destination} (${formatInr(item.travelRequest.estimatedCost)})`,
         confirmLabel: 'Approve Request',
         confirmColor: 'primary',
         commentsRequired: false,

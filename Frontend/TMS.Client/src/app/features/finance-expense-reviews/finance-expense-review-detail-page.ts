@@ -15,7 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
 import { NotificationService } from '../../core/services/notification.service';
 import { ApprovalDecisionDialog } from '../../shared/components/approval-decision-dialog/approval-decision-dialog';
@@ -28,6 +28,7 @@ import {
   mapExpenseClaimStatus,
   mapExpenseReviewDecision,
 } from '../../shared/models/tms-enums.model';
+import { formatInr } from '../../shared/utilities/currency.util';
 import { triggerBlobDownload } from '../../shared/utilities/file-download.util';
 import { extractApiErrorMessage } from '../../shared/utilities/http-error.util';
 import {
@@ -63,6 +64,7 @@ export class FinanceExpenseReviewDetailPage implements OnInit {
   private readonly reviewsService = inject(FinanceExpenseReviewsService);
   private readonly dialog = inject(MatDialog);
   private readonly notifications = inject(NotificationService);
+  private readonly router = inject(Router);
 
   readonly id = input.required<string>();
 
@@ -121,7 +123,7 @@ export class FinanceExpenseReviewDetailPage implements OnInit {
       width: '440px',
       data: {
         title: 'Approve Expense Claim',
-        subtitle: `Approve Claim #${current.expenseClaimId} for ${current.employeeName} totaling $${current.totalClaimedAmount.toFixed(2)}? This creates a reimbursement record.`,
+        subtitle: `Approve Claim #${current.expenseClaimId} for ${current.employeeName} totaling ${formatInr(current.totalClaimedAmount)}? This creates a reimbursement record.`,
         confirmLabel: 'Approve Claim',
         confirmColor: 'primary',
         commentsRequired: false,
@@ -255,7 +257,7 @@ export class FinanceExpenseReviewDetailPage implements OnInit {
               ? 'Expense claim rejected.'
               : 'Resubmission requested from employee.';
         this.notifications.success(message);
-        this.loadClaimData();
+        void this.router.navigateByUrl('/finance/expense-reviews');
       },
       error: (error: unknown) => {
         this.notifications.error(

@@ -55,13 +55,6 @@
   white-space: nowrap;
 }
 
-.actions-cell {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--tms-space-2);
-}
-
 .comments-cell {
   max-width: 260px;
   color: var(--tms-text-secondary);

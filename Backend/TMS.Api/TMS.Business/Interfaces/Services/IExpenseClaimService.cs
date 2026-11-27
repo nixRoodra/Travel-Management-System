@@ -44,4 +44,10 @@ public interface IExpenseClaimService
     Task<ExpenseClaim?> SubmitExpenseClaimForFinanceReviewAsync(
         int travelRequestId,
         int employeeId);
+
+        Task<bool> DeleteExpenseReceiptFromItemAsync(
+        int travelRequestId,
+        int expenseItemId,
+        int receiptId,
+        int employeeId);
 }

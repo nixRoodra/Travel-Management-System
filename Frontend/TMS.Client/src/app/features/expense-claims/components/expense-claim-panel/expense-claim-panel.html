@@ -100,7 +100,13 @@
       message="Add at least one expense item before submitting this claim for finance review."
     >
       @if (isEditable()) {
-        <button mat-flat-button color="primary" type="button" (click)="openAddItemDialog()">
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="isBusy()"
+          (click)="openAddItemDialog()"
+        >
           Add First Expense Item
         </button>
       }
@@ -153,6 +159,22 @@
                     >
                       <mat-icon>download</mat-icon>
                     </button>
+                    @if (isEditable()) {
+                      <button
+                        mat-icon-button
+                        type="button"
+                        color="warn"
+                        class="receipt-icon-btn"
+                        [disabled]="
+                          isBusy() || deletingReceiptId() === receipt.id || uploadingItemId() === item.id
+                        "
+                        (click)="confirmDeleteReceipt(item, receipt)"
+                        [matTooltip]="'Delete ' + receipt.fileName"
+                        [attr.aria-label]="'Delete receipt ' + receipt.fileName"
+                      >
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
+                    }
                   </div>
                 </div>
               }
@@ -167,7 +189,7 @@
                 <button
                   mat-button
                   type="button"
-                  [disabled]="uploadingItemId() === item.id"
+                  [disabled]="uploadingItemId() === item.id || deletingReceiptId() !== null || isBusy()"
                   (click)="fileInput.click()"
                 >
                   <mat-icon>upload_file</mat-icon>
@@ -182,26 +204,29 @@
           <th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
           <td mat-cell *matCellDef="let item" class="actions-cell">
             @if (isEditable()) {
-              <button
-                mat-icon-button
-                type="button"
-                matTooltip="Edit item"
-                aria-label="Edit expense item"
-                [disabled]="isBusy()"
-                (click)="openEditItemDialog(item)"
-              >
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button
-                mat-icon-button
-                type="button"
-                matTooltip="Delete item"
-                aria-label="Delete expense item"
-                [disabled]="isBusy()"
-                (click)="confirmDeleteItem(item)"
-              >
-                <mat-icon>delete_outline</mat-icon>
-              </button>
+              <div class="tms-actions-group">
+                <button
+                  mat-icon-button
+                  type="button"
+                  matTooltip="Edit item"
+                  aria-label="Edit expense item"
+                  [disabled]="isBusy()"
+                  (click)="openEditItemDialog(item)"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  color="warn"
+                  matTooltip="Delete item"
+                  aria-label="Delete expense item"
+                  [disabled]="isBusy()"
+                  (click)="confirmDeleteItem(item)"
+                >
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </div>
             } @else {
               <span class="locked-note">Locked</span>
             }

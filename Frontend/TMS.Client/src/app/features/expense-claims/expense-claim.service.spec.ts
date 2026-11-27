@@ -65,4 +65,39 @@ describe('ExpenseClaimService', () => {
 
     expect(status).toBe(ExpenseClaimStatus.Submitted);
   });
+
+  it('updates and deletes expense items and deletes individual receipts', () => {
+    service
+      .updateItem(12, 3, {
+        expenseDate: '2026-12-01',
+        description: 'Updated Taxi',
+        amount: 650,
+      })
+      .subscribe();
+
+    const updateReq = httpMock.expectOne('/api/trips/12/expense-claim/items/3');
+    expect(updateReq.request.method).toBe('PUT');
+    expect(updateReq.request.body).toEqual({
+      expenseDate: '2026-12-01',
+      description: 'Updated Taxi',
+      amount: 650,
+    });
+    updateReq.flush({
+      id: 3,
+      expenseDate: '2026-12-01',
+      description: 'Updated Taxi',
+      amount: 650,
+      receipts: [],
+    });
+
+    service.deleteItem(12, 3).subscribe();
+    const deleteItemReq = httpMock.expectOne('/api/trips/12/expense-claim/items/3');
+    expect(deleteItemReq.request.method).toBe('DELETE');
+    deleteItemReq.flush(null, { status: 204, statusText: 'No Content' });
+
+    service.deleteReceipt(12, 3, 9).subscribe();
+    const deleteReceiptReq = httpMock.expectOne('/api/trips/12/expense-claim/items/3/receipts/9');
+    expect(deleteReceiptReq.request.method).toBe('DELETE');
+    deleteReceiptReq.flush(null, { status: 204, statusText: 'No Content' });
+  });
 });

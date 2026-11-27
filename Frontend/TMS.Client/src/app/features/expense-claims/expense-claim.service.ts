@@ -81,6 +81,16 @@ export class ExpenseClaimService {
     );
   }
 
+  deleteReceipt(
+    travelRequestId: number,
+    expenseItemId: number,
+    receiptId: number,
+  ): Observable<void> {
+    return this.http.delete<void>(
+      `${this.claimBaseUrl(travelRequestId)}/items/${expenseItemId}/receipts/${receiptId}`,
+    );
+  }
+
   submitClaim(travelRequestId: number): Observable<ExpenseClaimDto> {
     return this.http.post<ExpenseClaimDto>(`${this.claimBaseUrl(travelRequestId)}/submit`, {});
   }

@@ -109,42 +109,44 @@
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
           <td mat-cell *matCellDef="let req" class="actions-cell">
-            <a
-              mat-icon-button
-              [routerLink]="['/travel-requests', req.id]"
-              matTooltip="View details"
-              aria-label="View travel request details"
-            >
-              <mat-icon>visibility</mat-icon>
-            </a>
-
-            @if (req.status === TravelRequestStatus.Draft) {
+            <div class="tms-actions-group">
               <a
                 mat-icon-button
-                [routerLink]="['/travel-requests', req.id, 'edit']"
-                matTooltip="Edit draft"
-                aria-label="Edit draft travel request"
+                [routerLink]="['/travel-requests', req.id]"
+                matTooltip="View details"
+                aria-label="View travel request details"
               >
-                <mat-icon>edit</mat-icon>
+                <mat-icon>visibility</mat-icon>
               </a>
-              <button
-                mat-stroked-button
-                color="primary"
-                type="button"
-                [disabled]="submittingId() === req.id"
-                (click)="confirmSubmit(req)"
-              >
-                {{ submittingId() === req.id ? 'Submitting...' : 'Submit' }}
-              </button>
-            } @else if (req.status === TravelRequestStatus.Approved) {
-              <a
-                mat-stroked-button
-                routerLink="/my-trips"
-                [queryParams]="{ tripId: req.id }"
-              >
-                Expenses
-              </a>
-            }
+
+              @if (req.status === TravelRequestStatus.Draft) {
+                <a
+                  mat-icon-button
+                  [routerLink]="['/travel-requests', req.id, 'edit']"
+                  matTooltip="Edit draft"
+                  aria-label="Edit draft travel request"
+                >
+                  <mat-icon>edit</mat-icon>
+                </a>
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  type="button"
+                  [disabled]="submittingId() === req.id"
+                  (click)="confirmSubmit(req)"
+                >
+                  {{ submittingId() === req.id ? 'Submitting...' : 'Submit' }}
+                </button>
+              } @else if (req.status === TravelRequestStatus.Approved) {
+                <a
+                  mat-stroked-button
+                  routerLink="/my-trips"
+                  [queryParams]="{ tripId: req.id }"
+                >
+                  Expenses
+                </a>
+              }
+            </div>
           </td>
         </ng-container>
 

@@ -27,6 +27,7 @@ import {
   TravelRequestStatus,
   mapExpenseClaimStatus,
 } from '../../../../shared/models/tms-enums.model';
+import { formatInr } from '../../../../shared/utilities/currency.util';
 import { triggerBlobDownload } from '../../../../shared/utilities/file-download.util';
 import { extractApiErrorMessage } from '../../../../shared/utilities/http-error.util';
 import {
@@ -79,6 +80,7 @@ export class ExpenseClaimPanel {
   protected readonly isLoading = signal(false);
   protected readonly isBusy = signal(false);
   protected readonly uploadingItemId = signal<number | null>(null);
+  protected readonly deletingReceiptId = signal<number | null>(null);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly claim = signal<ExpenseClaimDto | null>(null);
 
@@ -176,6 +178,10 @@ export class ExpenseClaimPanel {
   }
 
   protected openAddItemDialog(): void {
+    if (!this.isEditable()) {
+      return;
+    }
+
     const dialogRef = this.dialog.open(ExpenseItemDialog, {
       width: '440px',
       data: {
@@ -193,11 +199,10 @@ export class ExpenseClaimPanel {
         .pipe(finalize(() => this.isBusy.set(false)))
         .subscribe({
           next: (item) => {
-            this.claim.update((current) =>
-              current ? { ...current, expenseItems: [...current.expenseItems, item] } : current,
-            );
-            this.claimChanged.emit(this.claim());
-            this.notifications.success('Expense item added.');
+            this.applyAndRefreshClaim('Expense item added.', (current) => ({
+              ...current,
+              expenseItems: [...current.expenseItems, item],
+            }));
           },
           error: (error: unknown) => {
             this.notifications.error(
@@ -209,6 +214,10 @@ export class ExpenseClaimPanel {
   }
 
   protected openEditItemDialog(item: ExpenseItemDto): void {
+    if (!this.isEditable()) {
+      return;
+    }
+
     const dialogRef = this.dialog.open(ExpenseItemDialog, {
       width: '440px',
       data: {
@@ -227,18 +236,12 @@ export class ExpenseClaimPanel {
         .pipe(finalize(() => this.isBusy.set(false)))
         .subscribe({
           next: (updated) => {
-            this.claim.update((current) =>
-              current
-                ? {
-                    ...current,
-                    expenseItems: current.expenseItems.map((it) =>
-                      it.id === updated.id ? { ...updated, receipts: it.receipts } : it,
-                    ),
-                  }
-                : current,
-            );
-            this.claimChanged.emit(this.claim());
-            this.notifications.success('Expense item updated.');
+            this.applyAndRefreshClaim('Expense item updated.', (current) => ({
+              ...current,
+              expenseItems: current.expenseItems.map((it) =>
+                it.id === updated.id ? { ...updated, receipts: it.receipts } : it,
+              ),
+            }));
           },
           error: (error: unknown) => {
             this.notifications.error(
@@ -250,12 +253,22 @@ export class ExpenseClaimPanel {
   }
 
   protected confirmDeleteItem(item: ExpenseItemDto): void {
+    if (!this.isEditable()) {
+      return;
+    }
+
+    const receiptCount = item.receipts.length;
+    const receiptNote =
+      receiptCount > 0
+        ? `All ${receiptCount} associated receipt(s) will also be permanently deleted.`
+        : 'All associated receipts will also be deleted.';
+
     const dialogRef = this.dialog.open(ConfirmDialog, {
-      width: '400px',
+      width: '420px',
       data: {
         title: 'Delete Expense Item',
-        message: `Remove "${item.description}" and its attached receipts?`,
-        confirmLabel: 'Delete',
+        message: `Delete "${item.description}"? ${receiptNote}`,
+        confirmLabel: 'Delete Item',
         confirmColor: 'warn',
       },
     });
@@ -268,16 +281,10 @@ export class ExpenseClaimPanel {
         .pipe(finalize(() => this.isBusy.set(false)))
         .subscribe({
           next: () => {
-            this.claim.update((current) =>
-              current
-                ? {
-                    ...current,
-                    expenseItems: current.expenseItems.filter((it) => it.id !== item.id),
-                  }
-                : current,
-            );
-            this.claimChanged.emit(this.claim());
-            this.notifications.success('Expense item deleted.');
+            this.applyAndRefreshClaim('Expense item deleted.', (current) => ({
+              ...current,
+              expenseItems: current.expenseItems.filter((it) => it.id !== item.id),
+            }));
           },
           error: (error: unknown) => {
             this.notifications.error(
@@ -288,11 +295,52 @@ export class ExpenseClaimPanel {
     });
   }
 
+  protected confirmDeleteReceipt(item: ExpenseItemDto, receipt: ExpenseReceiptDto): void {
+    if (!this.isEditable()) {
+      return;
+    }
+
+    const dialogRef = this.dialog.open(ConfirmDialog, {
+      width: '420px',
+      data: {
+        title: 'Delete Receipt',
+        message: `Delete receipt "${receipt.fileName}" from "${item.description}"? The expense item and its other receipts will not be affected.`,
+        confirmLabel: 'Delete Receipt',
+        confirmColor: 'warn',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (!confirmed) return;
+      this.deletingReceiptId.set(receipt.id);
+      this.expenseClaimService
+        .deleteReceipt(this.travelRequestId(), item.id, receipt.id)
+        .pipe(finalize(() => this.deletingReceiptId.set(null)))
+        .subscribe({
+          next: () => {
+            this.applyAndRefreshClaim(`Deleted "${receipt.fileName}".`, (current) => ({
+              ...current,
+              expenseItems: current.expenseItems.map((it) =>
+                it.id === item.id
+                  ? { ...it, receipts: it.receipts.filter((r) => r.id !== receipt.id) }
+                  : it,
+              ),
+            }));
+          },
+          error: (error: unknown) => {
+            this.notifications.error(
+              extractApiErrorMessage(error, 'Failed to delete receipt.'),
+            );
+          },
+        });
+    });
+  }
+
   protected onReceiptFileSelected(item: ExpenseItemDto, event: Event): void {
     const inputEl = event.target as HTMLInputElement;
     const file = inputEl.files?.[0];
     inputEl.value = '';
-    if (!file) {
+    if (!file || !this.isEditable()) {
       return;
     }
 
@@ -314,17 +362,12 @@ export class ExpenseClaimPanel {
       .pipe(finalize(() => this.uploadingItemId.set(null)))
       .subscribe({
         next: (receipt) => {
-          this.claim.update((current) =>
-            current
-              ? {
-                  ...current,
-                  expenseItems: current.expenseItems.map((it) =>
-                    it.id === item.id ? { ...it, receipts: [...it.receipts, receipt] } : it,
-                  ),
-                }
-              : current,
-          );
-          this.notifications.success(`Uploaded "${receipt.fileName}".`);
+          this.applyAndRefreshClaim(`Uploaded "${receipt.fileName}".`, (current) => ({
+            ...current,
+            expenseItems: current.expenseItems.map((it) =>
+              it.id === item.id ? { ...it, receipts: [...it.receipts, receipt] } : it,
+            ),
+          }));
         },
         error: (error: unknown) => {
           this.notifications.error(
@@ -393,7 +436,7 @@ export class ExpenseClaimPanel {
       width: '420px',
       data: {
         title: 'Submit Expense Claim',
-        message: `Submit ${current.expenseItems.length} expense item(s) totaling $${this.overallTotal().toFixed(2)} for finance review?`,
+        message: `Submit ${current.expenseItems.length} expense item(s) totaling ${formatInr(this.overallTotal())} for finance review?`,
         confirmLabel: 'Submit Claim',
       },
     });
@@ -416,6 +459,35 @@ export class ExpenseClaimPanel {
             );
           },
         });
+    });
+  }
+
+  private applyAndRefreshClaim(
+    successMessage: string,
+    updateFn: (current: ExpenseClaimDto) => ExpenseClaimDto,
+  ): void {
+    this.claim.update((current) => (current ? updateFn(current) : current));
+    this.claimChanged.emit(this.claim());
+    this.notifications.success(successMessage);
+    this.refreshClaim();
+  }
+
+  private refreshClaim(): void {
+    const tripId = this.travelRequestId();
+    if (tripId <= 0) {
+      return;
+    }
+
+    this.expenseClaimService.getClaimForTrip(tripId).subscribe({
+      next: (fresh) => {
+        this.claim.set(fresh);
+        this.claimChanged.emit(fresh);
+      },
+      error: (error: unknown) => {
+        this.notifications.error(
+          extractApiErrorMessage(error, 'Failed to refresh expense claim.'),
+        );
+      },
     });
   }
 }

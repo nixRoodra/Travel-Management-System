@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { NotificationService } from '../../core/services/notification.service';
 import {
@@ -79,6 +79,9 @@ describe('FinanceExpenseReviewDetailPage', () => {
       ],
     });
 
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
     const fixture = TestBed.createComponent(FinanceExpenseReviewDetailPage);
     fixture.componentRef.setInput('id', '7');
     await fixture.whenStable();
@@ -94,6 +97,7 @@ describe('FinanceExpenseReviewDetailPage', () => {
     comp.openResubmissionDialog();
 
     expect(requestResubmission).toHaveBeenCalledWith(7, 'Need itemized receipt');
-    expect(getClaimDetail).toHaveBeenCalledTimes(2);
+    expect(getClaimDetail).toHaveBeenCalledTimes(1);
+    expect(navigateSpy).toHaveBeenCalledWith('/finance/expense-reviews');
   });
 });

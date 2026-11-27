@@ -49,4 +49,19 @@ public class ExpenseClaimRepository : IExpenseClaimRepository
     {
         await _context.SaveChangesAsync();
     }
+
+
+    public async Task DeleteExpenseItemAsync(ExpenseItem expenseItem)
+{
+    _context.ExpenseItems.Remove(expenseItem);
+
+    await _context.SaveChangesAsync();
+}
+
+public async Task DeleteExpenseReceiptAsync(ExpenseReceipt receipt)
+{
+    _context.ExpenseReceipts.Remove(receipt);
+
+    await _context.SaveChangesAsync();
+}
 }

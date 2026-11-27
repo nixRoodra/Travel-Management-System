@@ -156,6 +156,32 @@ public class ExpenseClaimsController : ControllerBase
     }
 
 
+    
+// DELETE /api/trips/{travelRequestId}/expense-claim/items/{expenseItemId}/receipts/{receiptId}
+
+[HttpDelete("items/{expenseItemId:int}/receipts/{receiptId:int}")]
+public async Task<IActionResult> DeleteExpenseReceipt(
+    int travelRequestId,
+    int expenseItemId,
+    int receiptId)
+{
+    var employeeId = CurrentUserHelper.GetEmployeeId(User);
+
+    var deleted = await _expenseClaimService
+        .DeleteExpenseReceiptFromItemAsync(
+            travelRequestId,
+            expenseItemId,
+            receiptId,
+            employeeId);
+
+    if (!deleted)
+        return NotFound();
+
+    return NoContent();
+}
+
+
+
     //PUT /api/trips/{travelRequestId}/expense-claim/items/{expenseItemId}
 
 

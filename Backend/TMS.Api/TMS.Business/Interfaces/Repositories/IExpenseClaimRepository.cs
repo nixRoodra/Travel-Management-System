@@ -16,5 +16,9 @@ namespace TMS.Business.Interfaces.Repositories
 
         Task SaveExpenseClaimChangesAsync();
 
+        Task DeleteExpenseItemAsync(ExpenseItem expenseItem);
+
+        Task DeleteExpenseReceiptAsync(ExpenseReceipt receipt);
+
     }
 }

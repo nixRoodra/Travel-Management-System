@@ -285,42 +285,92 @@ public class ExpenseClaimService : IExpenseClaimService
     }
 
 
-    public async Task<bool> DeleteExpenseItemFromClaimAsync(
-        int travelRequestId,
-        int expenseItemId,
-        int employeeId)
+    
+public async Task<bool> DeleteExpenseItemFromClaimAsync(
+    int travelRequestId,
+    int expenseItemId,
+    int employeeId)
+{
+    var expenseClaim = await _expenseClaimRepository
+        .GetExpenseClaimForEmployeeAsync(travelRequestId, employeeId);
+
+    if (expenseClaim == null)
+        return false;
+
+    if (expenseClaim.Status != ExpenseClaimStatus.Draft &&
+        expenseClaim.Status != ExpenseClaimStatus.ResubmissionRequested)
     {
-        var expenseClaim = await _expenseClaimRepository
-            .GetExpenseClaimForEmployeeAsync(travelRequestId, employeeId);
-
-        if (expenseClaim == null)
-            return false;
-
-        if (expenseClaim.Status != ExpenseClaimStatus.Draft &&
-            expenseClaim.Status != ExpenseClaimStatus.ResubmissionRequested)
-        {
-            throw new InvalidOperationException(
-                "Expense items cannot be deleted in the current claim status.");
-        }
-
-        var expenseItem = expenseClaim.ExpenseItems
-            .FirstOrDefault(item => item.Id == expenseItemId);
-
-        if (expenseItem == null)
-            return false;
-
-        // Delete physical receipt files first.
-        foreach (var receipt in expenseItem.Receipts)
-        {
-            await _receiptStorage.DeleteExpenseReceiptAsync(receipt.FilePath);
-        }
-
-        expenseClaim.ExpenseItems.Remove(expenseItem);
-
-        await _expenseClaimRepository.SaveExpenseClaimChangesAsync();
-
-        return true;
+        throw new InvalidOperationException(
+            "Expense items cannot be deleted in the current claim status.");
     }
+
+    var expenseItem = expenseClaim.ExpenseItems
+        .FirstOrDefault(item => item.Id == expenseItemId);
+
+    if (expenseItem == null)
+        return false;
+
+    // Capture receipt paths before deleting the database records.
+    var receiptFilePaths = expenseItem.Receipts
+        .Select(receipt => receipt.FilePath)
+        .ToList();
+
+    // Delete the expense item and its receipt records.
+    await _expenseClaimRepository.DeleteExpenseItemAsync(expenseItem);
+
+    // Delete the physical receipt files.
+    foreach (var filePath in receiptFilePaths)
+    {
+        await _receiptStorage.DeleteExpenseReceiptAsync(filePath);
+    }
+
+    return true;
+}
+
+
+public async Task<bool> DeleteExpenseReceiptFromItemAsync(
+    int travelRequestId,
+    int expenseItemId,
+    int receiptId,
+    int employeeId)
+{
+    var expenseClaim = await _expenseClaimRepository
+        .GetExpenseClaimForEmployeeAsync(travelRequestId, employeeId);
+
+    if (expenseClaim == null)
+        return false;
+
+    if (expenseClaim.Status != ExpenseClaimStatus.Draft &&
+        expenseClaim.Status != ExpenseClaimStatus.ResubmissionRequested)
+    {
+        throw new InvalidOperationException(
+            "Receipts cannot be deleted in the current claim status.");
+    }
+
+    var expenseItem = expenseClaim.ExpenseItems
+        .FirstOrDefault(item => item.Id == expenseItemId);
+
+    if (expenseItem == null)
+        return false;
+
+    var receipt = expenseItem.Receipts
+        .FirstOrDefault(receipt => receipt.Id == receiptId);
+
+    if (receipt == null)
+        return false;
+
+    var filePath = receipt.FilePath;
+
+    // Delete only the selected receipt database record.
+    await _expenseClaimRepository.DeleteExpenseReceiptAsync(receipt);
+
+    // Delete its physical file.
+    await _receiptStorage.DeleteExpenseReceiptAsync(filePath);
+
+    return true;
+}
+
+
 
 
 

@@ -76,9 +76,6 @@
   white-space: nowrap;
 }
 
-.actions-cell {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
+.tms-actions-group {
   gap: var(--tms-space-1);
 }

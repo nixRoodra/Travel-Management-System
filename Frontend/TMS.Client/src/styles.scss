@@ -39,3 +39,11 @@ body {
   background-color: #991b1b;
   color: #ffffff;
 }
+
+.tms-actions-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--tms-space-2);
+  vertical-align: middle;
+}
