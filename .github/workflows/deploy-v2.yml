@@ -1,0 +1,54 @@
+
+name: Deploy TMS to Azure
+
+on:
+  push:
+    branches:
+      - V2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tms-v2-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy to Azure VM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.AZURE_VM_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.AZURE_VM_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/tms_deploy
+          chmod 600 ~/.ssh/tms_deploy
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy application
+        env:
+          AZURE_VM_HOST: ${{ secrets.AZURE_VM_HOST }}
+          AZURE_VM_USER: ${{ secrets.AZURE_VM_USER }}
+        run: |
+          ssh -i ~/.ssh/tms_deploy \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$AZURE_VM_USER@$AZURE_VM_HOST" <<'REMOTE'
+          set -euo pipefail
+
+          cd /home/azureuser/Travel-Management-System
+
+          git fetch origin V2
+          git pull --ff-only origin V2
+
+          docker compose build api web
+          docker compose up -d --no-deps api web
+
+          docker compose ps
+          REMOTE
