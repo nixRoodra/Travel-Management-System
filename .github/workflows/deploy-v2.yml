@@ -40,15 +40,45 @@ jobs:
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
             "$AZURE_VM_USER@$AZURE_VM_HOST" <<'REMOTE'
-          set -euo pipefail
+          set -Eeuo pipefail
 
           cd /home/azureuser/Travel-Management-System
 
           git fetch origin V2
           git pull --ff-only origin V2
 
+          # Verify existing images.
+          docker image inspect tms-api:latest >/dev/null
+          docker image inspect tms-web:latest >/dev/null
+
+          # Preserve previous working images.
+          docker tag tms-api:latest tms-api:previous
+          docker tag tms-web:latest tms-web:previous
+
+          # Restore previous images if deployment fails.
+          rollback() {
+            local exit_code=$?
+            trap - ERR
+            set +e
+
+            echo "Deployment failed. Rolling back..."
+
+            docker tag tms-api:previous tms-api:latest
+            docker tag tms-web:previous tms-web:latest
+
+            docker compose up -d --no-deps api web
+
+            exit "$exit_code"
+          }
+
+          trap rollback ERR
+
           docker compose build api web
           docker compose up -d --no-deps api web
 
+          trap - ERR
+
+          echo "Deployment completed successfully."
           docker compose ps
+
           REMOTE
