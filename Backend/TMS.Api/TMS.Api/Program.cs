@@ -160,6 +160,8 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseHttpsRedirection();
+
     app.MapOpenApi();
     app.MapScalarApiReference(options =>
     {
@@ -175,7 +177,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-app.UseHttpsRedirection();
 
 app.UseCors("TmsClientPolicy");
 

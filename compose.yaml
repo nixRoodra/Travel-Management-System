@@ -1,0 +1,88 @@
+
+services:
+  database:
+    image: mcr.microsoft.com/mssql/server:2025-latest
+    container_name: tms-sql
+    hostname: tms-sql
+
+    env_file:
+      - /home/azureuser/tms-secrets/sql.env
+
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
+
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+
+    restart: unless-stopped
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'SQLCMDPASSWORD="$${MSSQL_SA_PASSWORD}" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -Q "SELECT 1" || exit 1'
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 40s
+
+    networks:
+      - tms-internal
+
+  api:
+    build:
+      context: .
+      dockerfile: Backend/TMS.Api/Dockerfile
+    image: tms-api:latest
+    container_name: tms-api
+
+    env_file:
+      - /home/azureuser/tms-secrets/api.env
+
+    volumes:
+      - /var/tms/receipts:/var/tms/receipts
+
+    depends_on:
+      database:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    networks:
+      - tms-internal
+      - tms-web
+
+  web:
+    build:
+      context: ./Frontend/TMS.Client
+      dockerfile: Dockerfile
+    image: tms-web:latest
+    container_name: tms-web
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - /var/www/certbot:/var/www/certbot:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - api
+
+    restart: unless-stopped
+
+    networks:
+      - tms-web
+
+volumes:
+  sqlserver_data:
+    name: tms_sqlserver_data
+
+networks:
+  tms-internal:
+    name: tms-internal
+    internal: true
+
+  tms-web:
+    name: tms-web
+
